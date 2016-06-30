@@ -1,12 +1,15 @@
 #!/bin/bash
 
 proc=$1
-size=$2
+concurents=$2
+size=$3
 
 service mysql start
 php /tmp/php/init.php
 for p in `seq 1 $proc`; do
-	php /tmp/php/test.php $((p * size)) $(((p+1) * size)) &
+	for c in `seq 1 $concurents`; do
+		php /tmp/php/test.php $((p * size)) $(((p+1) * size)) &
+	done
 done
 for p in `jobs -p`; do
 	wait $p
