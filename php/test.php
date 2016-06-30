@@ -35,7 +35,11 @@ function mark($lb_id, $ip)
 	$stat = $res->fetch(PDO::FETCH_ASSOC);
 	$ip_count = intval($stat['ip_count']);
 	$mark_max = intval($stat['mark_max']);
-	if ($ip_count === $mark_max)
+	if
+	(
+		($mark_max - CHECK_MARK_START + 1) === $ip_count ||
+		0 === $ip_count
+	)
 	{
 		fast_inc();
 		if ($mark_max === 0)
