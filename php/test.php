@@ -2,10 +2,11 @@
 
 require "database.php";
 
+define ('CHECK_MARK_START', 1000);
+
 function mark($lb_id, $ip)
 {
         global $db, $table_name;
-        $offset = 1000;
         $new_mark = 0;
 	$mutex_name = "check_mark_${lb_id}";
 	// Check if there is value for ip already
@@ -26,7 +27,7 @@ function mark($lb_id, $ip)
 	if ($ip_count === $mark_max)
 	{
 		if ($mark_max === 0)
-			$new_mark = $offset;
+			$new_mark = CHECK_MARK_START;
 		else
 			$new_mark = $mark_max + 1;
 	}
@@ -34,7 +35,7 @@ function mark($lb_id, $ip)
 	else
 	{
 		$res = usePreparedSelectBlade("SELECT fwmark FROM ${table_name} WHERE lb_id = ? ORDER BY fwmark", array($lb_id));
-		for ($i = $offset; ; $i++)
+		for ($i = CHECK_MARK_START; ;$i++)
 		{
 			$row = $res->fetch(PDO::FETCH_ASSOC);
 			$used_mark = (int) $row['fwmark'];
