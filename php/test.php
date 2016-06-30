@@ -34,13 +34,15 @@ function mark($lb_id, $ip)
 		$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? ORDER BY fwmark', array($lb_id));
 		for ($i = CHECK_MARK_START; ;$i++)
 		{
-			$row = $res->fetch(PDO::FETCH_ASSOC);
-			$used_mark = (int) $row['fwmark'];
-			if ($i !== $used_mark)
-			{
-				$new_mark = $i;
-				break;
-			}
+			if
+			(
+				($row = $res->fetch(PDO::FETCH_ASSOC)) &&
+				($i === intval($row['fwmark']))
+			)
+				continue;
+
+			$new_mark = $i;
+			break;
 		}
 
 	}
