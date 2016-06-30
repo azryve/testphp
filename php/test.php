@@ -6,7 +6,6 @@ define ('CHECK_MARK_START', 1000);
 
 function mark($lb_id, $ip)
 {
-        global $db;
         $new_mark = 0;
 	$mutex_name = "check_mark_${lb_id}";
 	// Check if there is value for ip already
@@ -46,9 +45,11 @@ function mark($lb_id, $ip)
 		}
 
 	}
-	usePreparedInsertBlade('SLB_RSMarks', array ("lb_id" => $lb_id,
-						   "ip" => $ip,
-						   "fwmark" => $new_mark));
+	usePreparedInsertBlade('SLB_RSMarks', array (
+						"lb_id" => $lb_id,
+						"ip" => $ip,
+						"fwmark" => $new_mark)
+	);
 	releaseDBMutex($mutex_name);
 
         return $new_mark;
