@@ -15,4 +15,4 @@ done
 for p in `jobs -p`; do
 	wait $p
 done
-echo 'SELECT COUNT(*), MAX(fwmark) FROM testdb.table1;' | mysql
+php /tmp/php/stat.php
