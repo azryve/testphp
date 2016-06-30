@@ -19,18 +19,16 @@ function mark($lb_id, $ip)
 	// Lock the range
 	setDBMutex($mutex_name);
 	// Fastpath: if range continious - just grab last one
-	$res = usePreparedSelectBlade("SELECT COUNT(*) as count, MAX(fwmark) as max_mark FROM ${table_name} WHERE lb_id = ?", array($lb_id));
+	$res = usePreparedSelectBlade("SELECT COUNT(*) as ip_count, MAX(fwmark) as mark_max FROM ${table_name} WHERE lb_id = ?", array($lb_id));
 	$stat = $res->fetch(PDO::FETCH_ASSOC);
-	if (
-		// fwmark range is continuous - grab next one
-		((int) $stat['count'] - 1) === ((int) $stat['max_mark'] - $offset) ||
-		// no fwmarks for this balancer
-		((int) $stat['count'] === 0)
-	)
+	$ip_count = intval($stat['ip_count']);
+	$mark_max = intval($stat['mark_max']);
+	if ($ip_count === $mark_max)
 	{
-		$new_mark = $offset;
-		if ($stat['max_mark'] !== NULL)
-			$new_mark = (int) $stat['max_mark'] + 1;
+		if ($mark_max === 0)
+			$new_mark = $offset;
+		else
+			$new_mark = $mark_max + 1;
 	}
 	// Slowpath: search for holes in fwmark range
 	else
