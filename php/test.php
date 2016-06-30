@@ -39,9 +39,6 @@ function mark($lb_id, $ip)
 		for ($i = $offset; ; $i++)
 		{
 			$row = $res->fetch(PDO::FETCH_ASSOC);
-			if (! $row)
-				throw new TestPDOException($result->errorInfo());
-
 			$used_mark = (int) $row['fwmark'];
 			if ($i !== $used_mark)
 			{
