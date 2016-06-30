@@ -6,21 +6,18 @@ define ('CHECK_MARK_START', 1000);
 
 function mark($lb_id, $ip)
 {
-        global $db, $table_name;
+        global $db;
         $new_mark = 0;
 	$mutex_name = "check_mark_${lb_id}";
 	// Check if there is value for ip already
-	$res = usePreparedSelectBlade("SELECT fwmark FROM ${table_name}
-					WHERE lb_id = ? AND ip = ?",
-					array($lb_id, $ip)
-	);
+	$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? AND ip = ?', array($lb_id, $ip));
 	if ($row = $res->fetch(PDO::FETCH_ASSOC))
 		return $row['fwmark'];
 
 	// Lock the range
 	setDBMutex($mutex_name);
 	// Fastpath: if range continious - just grab last one
-	$res = usePreparedSelectBlade("SELECT COUNT(*) as ip_count, MAX(fwmark) as mark_max FROM ${table_name} WHERE lb_id = ?", array($lb_id));
+	$res = usePreparedSelectBlade('SELECT COUNT(*) as ip_count, MAX(fwmark) as mark_max FROM SLB_RSMarks WHERE lb_id = ?', array($lb_id));
 	$stat = $res->fetch(PDO::FETCH_ASSOC);
 	$ip_count = intval($stat['ip_count']);
 	$mark_max = intval($stat['mark_max']);
@@ -34,7 +31,7 @@ function mark($lb_id, $ip)
 	// Slowpath: search for holes in fwmark range
 	else
 	{
-		$res = usePreparedSelectBlade("SELECT fwmark FROM ${table_name} WHERE lb_id = ? ORDER BY fwmark", array($lb_id));
+		$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? ORDER BY fwmark', array($lb_id));
 		for ($i = CHECK_MARK_START; ;$i++)
 		{
 			$row = $res->fetch(PDO::FETCH_ASSOC);
@@ -47,7 +44,7 @@ function mark($lb_id, $ip)
 		}
 
 	}
-	usePreparedInsertBlade($table_name, array ("lb_id" => $lb_id,
+	usePreparedInsertBlade('SLB_RSMarks', array ("lb_id" => $lb_id,
 						   "ip" => $ip,
 						   "fwmark" => $new_mark));
 	releaseDBMutex($mutex_name);
