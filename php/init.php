@@ -11,8 +11,18 @@ $init_queries = array ( "DROP DATABASE ${db_name}",
 			ip int,
 			fwmark int NOT NULL,
 			PRIMARY KEY (lb_id, ip),
-			UNIQUE (lb_id, fwmark));"
+			UNIQUE (lb_id, fwmark));",
+			"CREATE TABLE ${db_name}.${table_stats} (
+			id int auto_increment,
+			slowpath int unsigned,
+			fastpath int unsigned,
+			PRIMARY KEY (id));",
+			"INSERT INTO ${db_name}.${table_stats} (slowpath, fastpath) VALUES (0,0)"
 );  
-foreach ($init_queries as $query)
-	$db->exec($query);
 
+$db->beginTransaction();
+foreach ($init_queries as $query) {
+	$res = $db->prepare($query);
+	$res->execute();
+}
+$db->commit();

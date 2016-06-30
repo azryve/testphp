@@ -4,6 +4,21 @@ require "database.php";
 
 define ('CHECK_MARK_START', 1000);
 
+
+function fast_inc()
+{
+	global $db;
+	$db->exec("UPDATE SLB_stats SET fastpath = fastpath + 1");
+
+}
+
+function slow_inc()
+{
+	global $db;
+	$db->exec("UPDATE SLB_stats SET slowpath = slowpath + 1");
+
+}
+
 function mark($lb_id, $ip)
 {
         $new_mark = 0;
@@ -22,6 +37,7 @@ function mark($lb_id, $ip)
 	$mark_max = intval($stat['mark_max']);
 	if ($ip_count === $mark_max)
 	{
+		fast_inc();
 		if ($mark_max === 0)
 			$new_mark = CHECK_MARK_START;
 		else
@@ -30,6 +46,7 @@ function mark($lb_id, $ip)
 	// Slowpath: search for holes in fwmark range
 	else
 	{
+		slow_inc();
 		$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? ORDER BY fwmark', array($lb_id));
 		for ($i = CHECK_MARK_START; ;$i++)
 		{
