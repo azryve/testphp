@@ -5,67 +5,33 @@ require "database.php";
 define ('CHECK_MARK_START', 1000);
 
 
-function fast_inc()
-{
-	global $db;
-	$db->exec("UPDATE SLB_stats SET fastpath = fastpath + 1");
-
-}
-
-function slow_inc()
-{
-	global $db;
-	$db->exec("UPDATE SLB_stats SET slowpath = slowpath + 1");
-
-}
-
 function mark($lb_id, $ip)
 {
         $new_mark = 0;
 	$mutex_name = "check_mark_${lb_id}";
+	setDBMutex($mutex_name);
 	// Check if there is value for ip already
 	$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? AND ip = ?', array($lb_id, $ip));
 	if ($row = $res->fetch(PDO::FETCH_ASSOC))
+	{
+		releaseDBMutex($mutex_name);
 		return $row['fwmark'];
-
-	// Lock the range
-	setDBMutex($mutex_name);
-	// Fastpath: if range continious - just grab last one
-	$res = usePreparedSelectBlade('SELECT COUNT(*) as ip_count, MAX(fwmark) as mark_max FROM SLB_RSMarks WHERE lb_id = ?', array($lb_id));
-	$stat = $res->fetch(PDO::FETCH_ASSOC);
-	$ip_count = intval($stat['ip_count']);
-	$mark_max = intval($stat['mark_max']);
-	if
-	(
-		($mark_max - CHECK_MARK_START + 1) === $ip_count ||
-		0 === $ip_count
-	)
-	{
-		fast_inc();
-		if ($mark_max === 0)
-			$new_mark = CHECK_MARK_START;
-		else
-			$new_mark = $mark_max + 1;
 	}
-	// Slowpath: search for holes in fwmark range
-	else
+
+	$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? ORDER BY fwmark', array($lb_id));
+	for ($i = CHECK_MARK_START; ;$i++)
 	{
-		slow_inc();
-		$res = usePreparedSelectBlade('SELECT fwmark FROM SLB_RSMarks WHERE lb_id = ? ORDER BY fwmark', array($lb_id));
-		for ($i = CHECK_MARK_START; ;$i++)
-		{
-			if
-			(
-				($row = $res->fetch(PDO::FETCH_ASSOC)) &&
-				($i === intval($row['fwmark']))
-			)
-				continue;
+		if
+		(
+			($row = $res->fetch(PDO::FETCH_ASSOC)) &&
+			($i === intval($row['fwmark']))
+		)
+			continue;
 
-			$new_mark = $i;
-			break;
-		}
-
+		$new_mark = $i;
+		break;
 	}
+
 	usePreparedInsertBlade('SLB_RSMarks', array (
 						"lb_id" => $lb_id,
 						"ip" => $ip,
